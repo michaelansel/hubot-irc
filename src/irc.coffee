@@ -109,7 +109,10 @@ class IrcBot extends Adapter
     # Deprecated in 3.0.0
     return @userForId id
 
-  createUser: (channel, from) ->
+  getIdentForNick: (nick) ->
+    return ident
+
+  createUser: (channel, from, options) ->
     user = @getUserFromId from
     user.name = from
 
@@ -117,6 +120,9 @@ class IrcBot extends Adapter
       user.room = channel
     else
       user.room = null
+
+    user.ident = options.user if not user.ident? and options?.user?
+
     user
 
   kick: (channel, client, message) ->
@@ -235,7 +241,7 @@ class IrcBot extends Adapter
       user = self.createUser to, from
       self.receive new TextMessage(user, message)
 
-    bot.addListener 'message', (from, to, message) ->
+    bot.addListener 'message', (from, to, message, ircMessage) ->
       if options.nick.toLowerCase() == to.toLowerCase()
         # this is a private message, let the 'pm' listener handle it
         return
@@ -247,7 +253,7 @@ class IrcBot extends Adapter
 
       logger.debug "From #{from} to #{to}: #{message}"
 
-      user = self.createUser to, from
+      user = self.createUser to, from, ircMessage
       if user.room
         logger.debug "#{to} <#{from}> #{message}"
       else
